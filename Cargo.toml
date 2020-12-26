@@ -1,0 +1,10 @@
+[package]
+authors = ["Aramis Razzaghipour <aramisnoah@gmail.com>"]
+edition = "2018"
+name = "jsonl"
+version = "0.1.0"
+
+[dependencies]
+serde = "1"
+serde_json = "1"
+thiserror = "1"

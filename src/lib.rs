@@ -45,8 +45,14 @@ impl<Source: BufRead, Sink: Write> Connection<Source, Sink> {
     }
 
     pub fn send_message<T: serde::Serialize>(&mut self, t: &T) -> Result<(), MessageIoError> {
-        let json = serde_json::to_vec(t)?;
-        self.sink.write_all(&json).map_err(MessageIoError::Send)?;
+        // We use to_string here instead of to_vec because it verifies that the JSON is valid UTF-8,
+        // which is required by the JSON Lines specification (https://jsonlines.org).
+        let json = serde_json::to_string(t)?;
+
+        self.sink
+            .write_all(json.as_bytes())
+            .map_err(MessageIoError::Send)?;
+
         self.sink.write_all(b"\n").map_err(MessageIoError::Send)?;
 
         Ok(())

@@ -41,7 +41,7 @@ impl Connection<BufReader<Stdin>, Stdout> {
 }
 
 impl<R: BufRead, W: Write> Connection<R, W> {
-    /// Reads JSON from the reader and deserializes it into a given type.
+    /// Reads a line from the reader and deserializes it into a given type.
     pub fn read<T: serde::de::DeserializeOwned>(&mut self) -> Result<T, crate::ReadError> {
         crate::read(&mut self.reader)
     }

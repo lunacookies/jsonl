@@ -1,9 +1,12 @@
 #![warn(missing_debug_implementations)]
 
-use std::io::{self, BufRead, Write};
+use std::io::{BufRead, Write};
 
 mod connection;
+mod errors;
+
 pub use connection::Connection;
+pub use errors::{RecvError, SendError};
 
 // Receives a message from the source and deserializes it into a given type.
 pub fn recv_message<Source: BufRead, T: serde::de::DeserializeOwned>(
@@ -28,22 +31,4 @@ pub fn send_message<Sink: Write, T: serde::Serialize>(
     sink.write_all(b"\n").map_err(SendError::Write)?;
 
     Ok(())
-}
-
-/// An error that occurred during the receiving of a message.
-#[derive(Debug, thiserror::Error)]
-pub enum RecvError {
-    #[error("failed reading message data from source")]
-    Read(#[from] io::Error),
-    #[error("failed deserializing JSON")]
-    Deserialize(#[from] serde_json::Error),
-}
-
-/// An error that occurred during the sending of a message.
-#[derive(Debug, thiserror::Error)]
-pub enum SendError {
-    #[error("failed writing message data to sink")]
-    Write(#[from] io::Error),
-    #[error("failed serializing JSON")]
-    Serialize(#[from] serde_json::Error),
 }

@@ -41,13 +41,13 @@ impl<Source: BufRead, Sink: Write> Connection<Source, Sink> {
             .read_line(&mut buf)
             .map_err(MessageIoError::Recv)?;
 
-        Ok(serde_json::from_str(&buf)?)
+        Ok(serde_json::from_str(&buf).map_err(MessageIoError::DeserializeJson)?)
     }
 
     pub fn send_message<T: serde::Serialize>(&mut self, t: &T) -> Result<(), MessageIoError> {
         // We use to_string here instead of to_vec because it verifies that the JSON is valid UTF-8,
         // which is required by the JSON Lines specification (https://jsonlines.org).
-        let json = serde_json::to_string(t)?;
+        let json = serde_json::to_string(t).map_err(MessageIoError::SerializeJson)?;
 
         self.sink
             .write_all(json.as_bytes())
@@ -65,6 +65,8 @@ pub enum MessageIoError {
     Recv(io::Error),
     #[error("failed sending message to sink")]
     Send(io::Error),
+    #[error("failed serializing JSON")]
+    SerializeJson(serde_json::Error),
     #[error("failed deserializing JSON")]
-    Json(#[from] serde_json::Error),
+    DeserializeJson(serde_json::Error),
 }

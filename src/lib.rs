@@ -3,6 +3,31 @@
 use std::io::{self, BufRead, BufReader, Stdin, Stdout, Write};
 use std::process::{Child, ChildStdin, ChildStdout};
 
+// Receives a message from the source and deserializes it into a given type.
+pub fn recv_message<Source: BufRead, T: serde::de::DeserializeOwned>(
+    source: &mut Source,
+) -> Result<T, RecvError> {
+    let mut buf = String::new();
+    source.read_line(&mut buf).map_err(RecvError::Read)?;
+
+    Ok(serde_json::from_str(&buf).map_err(RecvError::Deserialize)?)
+}
+
+// Sends a given value to the sink, serializing it into JSON.
+pub fn send_message<Sink: Write, T: serde::Serialize>(
+    sink: &mut Sink,
+    t: &T,
+) -> Result<(), SendError> {
+    // We use to_string here instead of to_vec because it verifies that the JSON is valid UTF-8,
+    // which is required by the JSON Lines specification (https://jsonlines.org).
+    let json = serde_json::to_string(t).map_err(SendError::Serialize)?;
+
+    sink.write_all(json.as_bytes()).map_err(SendError::Write)?;
+    sink.write_all(b"\n").map_err(SendError::Write)?;
+
+    Ok(())
+}
+
 /// A connection that allows reading from a source and writing to a sink, both using JSON Lines.
 #[derive(Debug)]
 pub struct Connection<Source: BufRead, Sink: Write> {
@@ -45,25 +70,12 @@ impl Connection<BufReader<Stdin>, Stdout> {
 impl<Source: BufRead, Sink: Write> Connection<Source, Sink> {
     // Receives a message from the source and deserializes it into a given type.
     pub fn recv_message<T: serde::de::DeserializeOwned>(&mut self) -> Result<T, RecvError> {
-        let mut buf = String::new();
-        self.source.read_line(&mut buf).map_err(RecvError::Read)?;
-
-        Ok(serde_json::from_str(&buf).map_err(RecvError::Deserialize)?)
+        recv_message(&mut self.source)
     }
 
     // Sends a given value to the sink, serializing it into JSON.
     pub fn send_message<T: serde::Serialize>(&mut self, t: &T) -> Result<(), SendError> {
-        // We use to_string here instead of to_vec because it verifies that the JSON is valid UTF-8,
-        // which is required by the JSON Lines specification (https://jsonlines.org).
-        let json = serde_json::to_string(t).map_err(SendError::Serialize)?;
-
-        self.sink
-            .write_all(json.as_bytes())
-            .map_err(SendError::Write)?;
-
-        self.sink.write_all(b"\n").map_err(SendError::Write)?;
-
-        Ok(())
+        send_message(&mut self.sink, t)
     }
 }
 

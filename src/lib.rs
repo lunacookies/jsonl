@@ -1,12 +1,12 @@
 #![warn(rust_2018_idioms, missing_debug_implementations)]
 
-use std::io::{BufRead, Write};
-
 mod connection;
 mod errors;
 
 pub use connection::Connection;
 pub use errors::{RecvError, SendError};
+
+use std::io::{BufRead, Write};
 
 // Receives a message from the source and deserializes it into a given type.
 pub fn recv_message<Source: BufRead, T: serde::de::DeserializeOwned>(

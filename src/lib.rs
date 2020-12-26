@@ -44,41 +44,43 @@ impl Connection<BufReader<Stdin>, Stdout> {
 
 impl<Source: BufRead, Sink: Write> Connection<Source, Sink> {
     // Receives a message from the source and deserializes it into a given type.
-    pub fn recv_message<T: serde::de::DeserializeOwned>(&mut self) -> Result<T, MessageIoError> {
+    pub fn recv_message<T: serde::de::DeserializeOwned>(&mut self) -> Result<T, RecvError> {
         let mut buf = String::new();
+        self.source.read_line(&mut buf).map_err(RecvError::Read)?;
 
-        self.source
-            .read_line(&mut buf)
-            .map_err(MessageIoError::Recv)?;
-
-        Ok(serde_json::from_str(&buf).map_err(MessageIoError::DeserializeJson)?)
+        Ok(serde_json::from_str(&buf).map_err(RecvError::Deserialize)?)
     }
 
     // Sends a given value to the sink, serializing it into JSON.
-    pub fn send_message<T: serde::Serialize>(&mut self, t: &T) -> Result<(), MessageIoError> {
+    pub fn send_message<T: serde::Serialize>(&mut self, t: &T) -> Result<(), SendError> {
         // We use to_string here instead of to_vec because it verifies that the JSON is valid UTF-8,
         // which is required by the JSON Lines specification (https://jsonlines.org).
-        let json = serde_json::to_string(t).map_err(MessageIoError::SerializeJson)?;
+        let json = serde_json::to_string(t).map_err(SendError::Serialize)?;
 
         self.sink
             .write_all(json.as_bytes())
-            .map_err(MessageIoError::Send)?;
+            .map_err(SendError::Write)?;
 
-        self.sink.write_all(b"\n").map_err(MessageIoError::Send)?;
+        self.sink.write_all(b"\n").map_err(SendError::Write)?;
 
         Ok(())
     }
 }
 
-/// An error that occurred during the sending or receiving of messages.
+/// An error that occurred during the receiving of a message.
 #[derive(Debug, thiserror::Error)]
-pub enum MessageIoError {
-    #[error("failed receiving message from source")]
-    Recv(io::Error),
-    #[error("failed sending message to sink")]
-    Send(io::Error),
-    #[error("failed serializing JSON")]
-    SerializeJson(serde_json::Error),
+pub enum RecvError {
+    #[error("failed reading message data from source")]
+    Read(#[from] io::Error),
     #[error("failed deserializing JSON")]
-    DeserializeJson(serde_json::Error),
+    Deserialize(#[from] serde_json::Error),
+}
+
+/// An error that occurred during the sending of a message.
+#[derive(Debug, thiserror::Error)]
+pub enum SendError {
+    #[error("failed writing message data to sink")]
+    Write(#[from] io::Error),
+    #[error("failed serializing JSON")]
+    Serialize(#[from] serde_json::Error),
 }

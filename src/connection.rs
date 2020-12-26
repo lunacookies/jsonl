@@ -15,9 +15,9 @@ impl<R: BufRead, W: Write> Connection<R, W> {
 }
 
 impl<'a> Connection<BufReader<&'a mut ChildStdout>, &'a mut ChildStdin> {
-    // Creates a new `Connection` that uses the `stdin` of a child process as the writer and the
-    // child process’ `stdout` as the reader. This facilitates communication with this child process
-    // by passing data into its `stdin` and reading from its `stdout`.
+    /// Creates a new `Connection` that uses the `stdin` of a child process as the writer and the
+    /// child process’ `stdout` as the reader. This facilitates communication with this child process
+    /// by passing data into its `stdin` and reading from its `stdout`.
     pub fn new_from_child(child: &'a mut Child) -> Option<Self> {
         let stdin = child.stdin.as_mut()?;
         let stdout = child.stdout.as_mut()?;
@@ -30,8 +30,8 @@ impl<'a> Connection<BufReader<&'a mut ChildStdout>, &'a mut ChildStdin> {
 }
 
 impl Connection<BufReader<Stdin>, Stdout> {
-    // Creates a `Connection` from the stdio of the current process – `stdin` is used as the reader
-    // and `stdout` is used as the writer.
+    /// Creates a `Connection` from the stdio of the current process – `stdin` is used as the reader
+    /// and `stdout` is used as the writer.
     pub fn new_from_stdio() -> Self {
         Self {
             reader: BufReader::new(io::stdin()),
@@ -41,12 +41,12 @@ impl Connection<BufReader<Stdin>, Stdout> {
 }
 
 impl<R: BufRead, W: Write> Connection<R, W> {
-    // Reads JSON from the reader and deserializes it into a given type.
+    /// Reads JSON from the reader and deserializes it into a given type.
     pub fn read<T: serde::de::DeserializeOwned>(&mut self) -> Result<T, crate::ReadError> {
         crate::read(&mut self.reader)
     }
 
-    // Writes a given value to the writer, serializing it into JSON.
+    /// Writes a given value to the writer, serializing it into JSON.
     pub fn write<T: serde::Serialize>(&mut self, t: &T) -> Result<(), crate::WriteError> {
         crate::write(&mut self.writer, t)
     }

@@ -4,31 +4,26 @@ mod connection;
 mod errors;
 
 pub use connection::Connection;
-pub use errors::{RecvError, SendError};
+pub use errors::{ReadError, WriteError};
 
 use std::io::{BufRead, Write};
 
-// Receives a message from the source and deserializes it into a given type.
-pub fn recv_message<Source: BufRead, T: serde::de::DeserializeOwned>(
-    mut source: Source,
-) -> Result<T, RecvError> {
+// Reads a line from the reader and deserializes it into a given type.
+pub fn read<R: BufRead, T: serde::de::DeserializeOwned>(mut reader: R) -> Result<T, ReadError> {
     let mut buf = String::new();
-    source.read_line(&mut buf).map_err(RecvError::Read)?;
+    reader.read_line(&mut buf).map_err(ReadError::Io)?;
 
-    Ok(serde_json::from_str(&buf).map_err(RecvError::Deserialize)?)
+    Ok(serde_json::from_str(&buf).map_err(ReadError::Deserialize)?)
 }
 
-// Sends a given value to the sink, serializing it into JSON.
-pub fn send_message<Sink: Write, T: serde::Serialize>(
-    mut sink: Sink,
-    t: &T,
-) -> Result<(), SendError> {
+// Writes a given value to the writer, serializing it into JSON.
+pub fn write<W: Write, T: serde::Serialize>(mut writer: W, t: &T) -> Result<(), WriteError> {
     // We use to_string here instead of to_vec because it verifies that the JSON is valid UTF-8,
     // which is required by the JSON Lines specification (https://jsonlines.org).
-    let json = serde_json::to_string(t).map_err(SendError::Serialize)?;
+    let json = serde_json::to_string(t).map_err(WriteError::Serialize)?;
 
-    sink.write_all(json.as_bytes()).map_err(SendError::Write)?;
-    sink.write_all(b"\n").map_err(SendError::Write)?;
+    writer.write_all(json.as_bytes()).map_err(WriteError::Io)?;
+    writer.write_all(b"\n").map_err(WriteError::Io)?;
 
     Ok(())
 }

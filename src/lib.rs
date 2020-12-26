@@ -10,7 +10,7 @@ use std::io::{BufRead, Write};
 
 // Receives a message from the source and deserializes it into a given type.
 pub fn recv_message<Source: BufRead, T: serde::de::DeserializeOwned>(
-    source: &mut Source,
+    mut source: Source,
 ) -> Result<T, RecvError> {
     let mut buf = String::new();
     source.read_line(&mut buf).map_err(RecvError::Read)?;
@@ -20,7 +20,7 @@ pub fn recv_message<Source: BufRead, T: serde::de::DeserializeOwned>(
 
 // Sends a given value to the sink, serializing it into JSON.
 pub fn send_message<Sink: Write, T: serde::Serialize>(
-    sink: &mut Sink,
+    mut sink: Sink,
     t: &T,
 ) -> Result<(), SendError> {
     // We use to_string here instead of to_vec because it verifies that the JSON is valid UTF-8,

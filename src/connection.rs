@@ -1,7 +1,17 @@
 use std::io::{self, BufRead, BufReader, Stdin, Stdout, Write};
 use std::process::{Child, ChildStdin, ChildStdout};
 
-/// A connection that allows reading from a reader and writing to a writer, both using JSON Lines.
+/// Use this type when you have both a reader and writer, and want them to be grouped together.
+///
+/// There are situations in which you have both a reader and a writer being passed around code,
+/// always kept together. This forms what is known as a ‘[data clump]’, and harms code readability.
+/// By grouping the two together it makes clear that they are both needed, and prevents mistakes
+/// when one is forgotten.
+///
+/// `Connection` is internally a pair of a reader and a writer, and delegates to [`crate::read`] and
+/// [`crate::write`] for [`Connection::read`] and [`Connection::write`] respectively.
+///
+/// [data clump]: https://youtu.be/DC-pQPq0acs?t=521
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 pub struct Connection<R: BufRead, W: Write> {
     reader: R,

@@ -1,5 +1,14 @@
 #![warn(rust_2018_idioms, missing_debug_implementations)]
 
+//! An implementation of JSON Lines for Rust.
+//!
+//! [JSON Lines](https://jsonlines.org) is a simple format consisting of [JSON](https://json.org)
+//! values separated by newlines. Use [`read()`] and [`write()`] to interact wtih readers and
+//! writers in the JSON Lines format. Serialization and deserialization is done automatically.
+//!
+//! See [`Connection`] for situations in which you have both a reader and a writer and would like to
+//! bundle them up together.
+
 mod connection;
 mod errors;
 

@@ -25,7 +25,7 @@ impl<'a> Connection<BufReader<&'a mut ChildStdout>, &'a mut ChildStdin> {
 }
 
 impl Connection<BufReader<Stdin>, Stdout> {
-    pub fn new_from_current_process() -> Self {
+    pub fn new_from_stdio() -> Self {
         Self {
             source: BufReader::new(io::stdin()),
             sink: io::stdout(),

@@ -1,7 +1,10 @@
+#![warn(missing_debug_implementations)]
+
 use std::io::{self, BufRead, BufReader, Stdin, Stdout, Write};
 use std::process::{Child, ChildStdin, ChildStdout};
 
 /// A connection that allows reading from a source and writing to a sink, both using JSON Lines.
+#[derive(Debug)]
 pub struct Connection<Source: BufRead, Sink: Write> {
     source: Source,
     sink: Sink,

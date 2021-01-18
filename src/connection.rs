@@ -1,4 +1,5 @@
 use std::io::{self, BufRead, BufReader, Stdin, Stdout, Write};
+use std::net::TcpStream;
 use std::process::{Child, ChildStdin, ChildStdout};
 
 /// Use this type when you have both a reader and writer, and want them to be grouped together.
@@ -47,6 +48,16 @@ impl Connection<BufReader<Stdin>, Stdout> {
             reader: BufReader::new(io::stdin()),
             writer: io::stdout(),
         }
+    }
+}
+
+impl Connection<BufReader<TcpStream>, TcpStream> {
+    /// Creates a new `Connection` from a TCP stream.
+    pub fn new_from_tcp_stream(tcp_stream: TcpStream) -> io::Result<Self> {
+        Ok(Self {
+            reader: BufReader::new(tcp_stream.try_clone()?),
+            writer: tcp_stream,
+        })
     }
 }
 

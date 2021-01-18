@@ -40,7 +40,7 @@ impl<'a> Connection<BufReader<&'a mut ChildStdout>, &'a mut ChildStdin> {
 }
 
 impl Connection<BufReader<Stdin>, Stdout> {
-    /// Creates a `Connection` from the stdio of the current process – `stdin` is used as the reader
+    /// Creates a new `Connection` from the stdio of the current process – `stdin` is used as the reader
     /// and `stdout` is used as the writer.
     pub fn new_from_stdio() -> Self {
         Self {

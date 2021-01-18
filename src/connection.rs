@@ -60,4 +60,9 @@ impl<R: BufRead, W: Write> Connection<R, W> {
     pub fn write<T: serde::Serialize>(&mut self, t: &T) -> Result<(), crate::WriteError> {
         crate::write(&mut self.writer, t)
     }
+
+    /// Flushes the contained writer’s buffer.
+    pub fn flush(&mut self) -> Result<(), io::Error> {
+        self.writer.flush()
+    }
 }

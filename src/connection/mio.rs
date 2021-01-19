@@ -4,9 +4,9 @@ use parking_lot::RwLock;
 use std::io::{self, BufReader, Read, Write};
 use std::sync::Arc;
 
-impl Connection<BufReader<ArcRwLockTcpStream>, ArcRwLockTcpStream> {
-    /// Creates a new `Connection` from a Mio TCP stream.
-    pub fn new_from_mio_tcp_stream(tcp_stream: TcpStream) -> Self {
+impl<'a> Connection<BufReader<ArcRwLockTcpStream<'a>>, ArcRwLockTcpStream<'a>> {
+    /// Creates a new `Connection` from a mutable reference to a Mio TCP stream.
+    pub fn new_from_mio_tcp_stream(tcp_stream: &'a mut TcpStream) -> Self {
         let tcp_stream = ArcRwLockTcpStream(Arc::new(RwLock::new(tcp_stream)));
 
         Self {
@@ -17,15 +17,15 @@ impl Connection<BufReader<ArcRwLockTcpStream>, ArcRwLockTcpStream> {
 }
 
 #[derive(Debug, Clone)]
-pub struct ArcRwLockTcpStream(Arc<RwLock<TcpStream>>);
+pub struct ArcRwLockTcpStream<'a>(Arc<RwLock<&'a mut TcpStream>>);
 
-impl Read for ArcRwLockTcpStream {
+impl Read for ArcRwLockTcpStream<'_> {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         self.0.write().read(buf)
     }
 }
 
-impl Write for ArcRwLockTcpStream {
+impl Write for ArcRwLockTcpStream<'_> {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         self.0.write().write(buf)
     }

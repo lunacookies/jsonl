@@ -7,6 +7,8 @@ pub enum ReadError {
     Io(#[from] io::Error),
     #[error("failed deserializing JSON")]
     Deserialize(#[from] serde_json::Error),
+    #[error("reader has reached EOF")]
+    Eof,
 }
 
 /// An error that occurred during writing.

@@ -1,6 +1,20 @@
-use std::io::{self, BufRead, BufReader, Stdin, Stdout, Write};
-use std::net::TcpStream;
-use std::process::{Child, ChildStdin, ChildStdout};
+#[cfg(not(feature = "tokio"))]
+mod imports {
+    pub(super) use std::io::{self, BufRead, BufReader, Stdin, Stdout, Write};
+    pub(super) use std::net::TcpStream;
+    pub(super) use std::process::{Child, ChildStdin, ChildStdout};
+}
+#[cfg(feature = "tokio")]
+mod imports {
+    pub(super) use tokio::io::{
+        self, AsyncBufRead as BufRead, AsyncWrite as Write, AsyncWriteExt, BufReader, Stdin, Stdout,
+    };
+    pub(super) use tokio::net::tcp::{ReadHalf, WriteHalf};
+    pub(super) use tokio::net::TcpStream;
+    pub(super) use tokio::process::{Child, ChildStdin, ChildStdout};
+}
+
+use imports::*;
 
 /// Use this type when you have both a reader and writer, and want them to be grouped together.
 ///
@@ -51,6 +65,7 @@ impl Connection<BufReader<Stdin>, Stdout> {
     }
 }
 
+#[cfg(not(feature = "tokio"))]
 impl Connection<BufReader<TcpStream>, TcpStream> {
     /// Creates a new `Connection` from a TCP stream.
     pub fn new_from_tcp_stream(tcp_stream: TcpStream) -> io::Result<Self> {
@@ -61,6 +76,20 @@ impl Connection<BufReader<TcpStream>, TcpStream> {
     }
 }
 
+#[cfg(feature = "tokio")]
+impl<'a> Connection<BufReader<ReadHalf<'a>>, WriteHalf<'a>> {
+    /// Creates a new `Connection` from a mutable reference to a TCP stream.
+    pub fn new_from_tcp_stream(tcp_stream: &'a mut TcpStream) -> io::Result<Self> {
+        let (read_half, write_half) = tcp_stream.split();
+
+        Ok(Self {
+            reader: BufReader::new(read_half),
+            writer: write_half,
+        })
+    }
+}
+
+#[cfg(not(feature = "tokio"))]
 impl<R: BufRead, W: Write> Connection<R, W> {
     /// Reads a line from the reader and deserializes it into a given type.
     pub fn read<T: serde::de::DeserializeOwned>(&mut self) -> Result<T, crate::ReadError> {
@@ -75,5 +104,23 @@ impl<R: BufRead, W: Write> Connection<R, W> {
     /// Flushes the contained writer’s buffer.
     pub fn flush(&mut self) -> Result<(), io::Error> {
         self.writer.flush()
+    }
+}
+
+#[cfg(feature = "tokio")]
+impl<R: BufRead + Unpin, W: Write + Unpin> Connection<R, W> {
+    /// Reads a line from the reader and deserializes it into a given type.
+    pub async fn read<T: serde::de::DeserializeOwned>(&mut self) -> Result<T, crate::ReadError> {
+        crate::read(&mut self.reader).await
+    }
+
+    /// Writes a given value to the writer, serializing it into JSON.
+    pub async fn write<T: serde::Serialize>(&mut self, t: &T) -> Result<(), crate::WriteError> {
+        crate::write(&mut self.writer, t).await
+    }
+
+    /// Flushes the contained writer’s buffer.
+    pub async fn flush(&mut self) -> Result<(), io::Error> {
+        self.writer.flush().await
     }
 }

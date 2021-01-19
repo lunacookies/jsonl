@@ -1,7 +1,7 @@
 #[cfg(not(feature = "tokio"))]
 mod imports {
     pub(super) use std::io::{self, BufRead, BufReader, Stdin, Stdout, Write};
-    pub(super) use std::net::TcpStream;
+    pub(super) use std::net::{Shutdown, TcpStream};
     pub(super) use std::process::{Child, ChildStdin, ChildStdout};
 }
 #[cfg(feature = "tokio")]
@@ -74,6 +74,11 @@ impl Connection<BufReader<TcpStream>, TcpStream> {
             writer: tcp_stream,
         })
     }
+
+    /// Closes the TCP stream.
+    pub fn shutdown(self) -> Result<(), io::Error> {
+        self.writer.shutdown(Shutdown::Both)
+    }
 }
 
 #[cfg(feature = "tokio")]
@@ -86,6 +91,11 @@ impl<'a> Connection<BufReader<ReadHalf<'a>>, WriteHalf<'a>> {
             reader: BufReader::new(read_half),
             writer: write_half,
         })
+    }
+
+    /// Closes the TCP stream.
+    pub async fn shutdown(mut self) -> Result<(), io::Error> {
+        self.writer.shutdown().await
     }
 }
 

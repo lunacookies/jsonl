@@ -2,9 +2,6 @@ use std::io::{self, BufRead, BufReader, Stdin, Stdout, Write};
 use std::net::TcpStream;
 use std::process::{Child, ChildStdin, ChildStdout};
 
-#[cfg(feature = "mio-tcp-stream")]
-mod mio;
-
 /// Use this type when you have both a reader and writer, and want them to be grouped together.
 ///
 /// There are situations in which you have both a reader and a writer being passed around code,

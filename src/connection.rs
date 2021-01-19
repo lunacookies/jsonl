@@ -76,7 +76,7 @@ impl Connection<BufReader<TcpStream>, TcpStream> {
     }
 
     /// Closes the TCP stream.
-    pub fn shutdown(self) -> Result<(), io::Error> {
+    pub fn shutdown(self) -> io::Result<()> {
         self.writer.shutdown(Shutdown::Both)
     }
 }
@@ -94,7 +94,7 @@ impl<'a> Connection<BufReader<ReadHalf<'a>>, WriteHalf<'a>> {
     }
 
     /// Closes the TCP stream.
-    pub async fn shutdown(mut self) -> Result<(), io::Error> {
+    pub async fn shutdown(mut self) -> io::Result<()> {
         self.writer.shutdown().await
     }
 }
@@ -112,7 +112,7 @@ impl<R: BufRead, W: Write> Connection<R, W> {
     }
 
     /// Flushes the contained writer’s buffer.
-    pub fn flush(&mut self) -> Result<(), io::Error> {
+    pub fn flush(&mut self) -> io::Result<()> {
         self.writer.flush()
     }
 }
@@ -130,7 +130,7 @@ impl<R: BufRead + Unpin, W: Write + Unpin> Connection<R, W> {
     }
 
     /// Flushes the contained writer’s buffer.
-    pub async fn flush(&mut self) -> Result<(), io::Error> {
+    pub async fn flush(&mut self) -> io::Result<()> {
         self.writer.flush().await
     }
 }

@@ -8,6 +8,9 @@
 //!
 //! See [`Connection`] for situations in which you have both a reader and a writer and would like to
 //! bundle them up together.
+//!
+//! Enable the `mio-tcp-stream` feature to use [`Connection::new_from_mio_tcp_stream`], which allows you to
+//! create a [`Connection`] from a [`mio::net::TcpStream`] with ease.
 
 mod connection;
 mod errors;

@@ -57,7 +57,11 @@ mod imp {
         mut reader: R,
     ) -> Result<T, ReadError> {
         let mut buf = String::new();
-        reader.read_line(&mut buf).await.map_err(ReadError::Io)?;
+        let num_bytes_read = reader.read_line(&mut buf).await.map_err(ReadError::Io)?;
+
+        if num_bytes_read == 0 {
+            return Err(ReadError::Eof);
+        }
 
         Ok(serde_json::from_str(&buf).map_err(ReadError::Deserialize)?)
     }
